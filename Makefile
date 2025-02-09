@@ -6,35 +6,38 @@
 name = Inception
 
 all:
-	@printf "Launch configuration ${name}...\n"
-	@bash srcs/requirements/wordpress/tools/make_dir.sh
-	@docker-compose -f ./srcs/docker-compose.yml --env-file srcs/.env up -d
+	echo "Launch configuration ${name}..."
+	bash srcs/requirements/tools/make_dir.sh
+	docker-compose -f ./srcs/docker-compose.yml up -d
 
 build:
-	@printf "Building configuration ${name}...\n"
-	@bash srcs/requirements/wordpress/tools/make_dir.sh
-	@docker-compose -f ./srcs/docker-compose.yml --env-file srcs/.env up -d --build
+	echo "Building configuration ${name}..."
+	bash srcs/requirements/tools/make_dir.sh
+	docker-compose -f ./srcs/docker-compose.yml up -d --build
 
 down:
-	@printf "Stopping configuration ${name}...\n"
-	@docker-compose -f ./srcs/docker-compose.yml --env-file srcs/.env down
+	echo "Stopping configuration ${name}..."
+	docker-compose -f ./srcs/docker-compose.yml down
 
 re:	down
-	@printf "Rebuilding configuration ${name}...\n"
-	@bash srcs/requirements/wordpress/tools/make_dir.sh
-	@docker-compose -f ./srcs/docker-compose.yml --env-file srcs/.env up -d --build
+	echo "Rebuilding configuration ${name}..."
+	bash srcs/requirements/tools/make_dir.sh
+	docker-compose -f ./srcs/docker-compose.yml up -d --build
 
-clean: down
-	@printf "Cleaning configuration ${name}...\n"
-	@docker system prune -a --force
-	@sudo rm -rf ~/data
+clean:
+	echo "Cleaning configuration ${name}..."
+	docker-compose -f ./srcs/docker-compose.yml down --remove-orphans
+	docker image prune -a -f
+	docker network prune -f
+	docker volume prune -f
 
 fclean:
-	@printf "Total cleaning of all docker configurations\n"
-	@if [ $$(docker ps -qa | wc -l) -gt 0 ]; then docker stop $$(docker ps -qa); fi
-	@docker system prune --all --force --volumes
-	@docker network prune --force
-	@docker volume prune --force
-	@sudo rm -rf ~/data
+	echo "Total cleaning of all docker configurations"
+	docker-compose -f ./srcs/docker-compose.yml down --rmi all --volumes --remove-orphans
+	docker image prune -a -f
+	docker network prune -f
+	docker volume prune -f
+	sudo rm -rf ~/data
 
 .PHONY	: all build down re clean fclean
+.SILENT :

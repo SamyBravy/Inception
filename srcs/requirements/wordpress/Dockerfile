@@ -1,9 +1,6 @@
-FROM alpine:3.21
+FROM alpine:3.20
 
-ARG PHP_VERSION=8.3 \
-    DB_NAME \
-    DB_USER \
-    DB_PASS
+ENV PHP_VERSION=83
 
 RUN apk update && apk upgrade && apk add --no-cache \
     php${PHP_VERSION} \
@@ -21,21 +18,19 @@ RUN apk update && apk upgrade && apk add --no-cache \
     php${PHP_VERSION}-redis \
     wget \
     unzip && \
-    sed -i "s|listen = 127.0.0.1:9000|listen = 9000|g" \
-    /etc/php${PHP_VERSION}/php-fpm.d/www.conf \
-    sed -i "s|;listen.owner = nobody|listen.owner = nobody|g" \
-    /etc/php${PHP_VERSION}/php-fpm.d/www.conf \
-    sed -i "s|;listen.group = nobody|listen.group = nobody|g" \
-    /etc/php${PHP_VERSION}/php-fpm.d/www.conf && \
+    sed -i "s|listen = 127.0.0.1:9000|listen = 9000|g" /etc/php${PHP_VERSION}/php-fpm.d/www.conf && \
+    if grep -q "^;listen.owner = nobody" /etc/php${PHP_VERSION}/php-fpm.d/www.conf; then \
+        sed -i "s|;listen.owner = nobody|listen.owner = nobody|g" /etc/php${PHP_VERSION}/php-fpm.d/www.conf; \
+    fi && \
+    if grep -q "^;listen.group = nobody" /etc/php${PHP_VERSION}/php-fpm.d/www.conf; then \
+        sed -i "s|;listen.group = nobody|listen.group = nobody|g" /etc/php${PHP_VERSION}/php-fpm.d/www.conf; \
+    fi && \
     rm -f /var/cache/apk/*
-    
-WORKDIR /var/www
-RUN wget https://wordpress.org/latest.zip && \
-    unzip latest.zip && \
-    cp -rf wordpress/* . && \
-    rm -rf wordpress latest.zip
-COPY ./requirements/wordpress/conf/wp-config-create.sh .
-RUN sh wp-config-create.sh && rm wp-config-create.sh && \
-    chmod -R 0777 wp-content/
 
-CMD ["sh", "-c", "/usr/sbin/php-fpm${PHP_VERSION}", "-F"]
+RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -P /var/www && \
+    mv /var/www/wp-cli.phar /usr/local/bin/wp && \
+    chmod +x /usr/local/bin/wp
+
+COPY requirements/wordpress/tools/auto_config.sh /var/www
+ENTRYPOINT [ "sh", "/var/www/auto_config.sh" ]
+CMD ["sh", "-c", "php-fpm${PHP_VERSION} -F"]
