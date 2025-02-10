@@ -26,29 +26,47 @@ services:
         DB_PASS: ${DB_PASS}
         DB_ROOT: ${DB_ROOT}
     container_name: mariadb
-    ports:
-      - "3306:3306"
     networks:
       - inception
     volumes:
       - db-volume:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 60s
+      retries: 50
     restart: always
   
   wordpress:
     build:
-      context: .
-      dockerfile: requirements/wordpress/Dockerfile
-      environment:
-        DB_NAME: ${DB_NAME}
-        DB_USER: ${DB_USER}
-        DB_PASS: ${DB_PASS}
+      context: requirements/wordpress/
+      dockerfile: Dockerfile
+    env_file:
+      - .env
     container_name: wordpress
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - inception
     volumes:
       - wp-volume:/var/www/
+    restart: always
+
+  redis:
+    build:
+      context: .
+      dockerfile: requirements/Bonus/Redis/Dockerfile
+    container_name: redis
+    networks:
+      - inception
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 60s
+      retries: 50
     restart: always
 
 volumes:

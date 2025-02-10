@@ -6,28 +6,29 @@
 name = Inception
 
 all:
-	echo "Launch configuration ${name}..."
+	echo "Launching configuration ${name}..."
 	bash srcs/requirements/tools/make_dir.sh
-	docker-compose -f ./srcs/docker-compose.yml up -d
+	docker compose -f ./srcs/docker-compose.yml up -d
+
+test: down
+	echo "Launching configuration ${name}..."
+	bash srcs/requirements/tools/make_dir.sh
+	docker compose -f ./srcs/docker-compose.yml up --build
 
 build:
 	echo "Building configuration ${name}..."
 	bash srcs/requirements/tools/make_dir.sh
-	docker-compose -f ./srcs/docker-compose.yml up -d --build
+	docker compose -f ./srcs/docker-compose.yml build
 
 down:
 	echo "Stopping configuration ${name}..."
-	docker-compose -f ./srcs/docker-compose.yml down
+	docker compose -f ./srcs/docker-compose.yml down
 
-re:	down
-	echo "Rebuilding configuration ${name}..."
-	bash srcs/requirements/tools/make_dir.sh
-	docker-compose -f ./srcs/docker-compose.yml up -d --build
+re: clean build all
 
 clean:
 	echo "Cleaning configuration ${name}..."
 	docker-compose -f ./srcs/docker-compose.yml down --remove-orphans
-	docker image prune -a -f
 	docker network prune -f
 	docker volume prune -f
 
