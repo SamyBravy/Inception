@@ -7,17 +7,14 @@ name = Inception
 
 all:
 	echo "Launching configuration ${name}..."
-	bash srcs/requirements/tools/make_dir.sh
 	docker compose -f ./srcs/docker-compose.yml up -d
 
 test: down
 	echo "Launching configuration ${name}..."
-	bash srcs/requirements/tools/make_dir.sh
 	docker compose -f ./srcs/docker-compose.yml up --build
 
 build:
 	echo "Building configuration ${name}..."
-	bash srcs/requirements/tools/make_dir.sh
 	docker compose -f ./srcs/docker-compose.yml build
 
 down:
@@ -38,7 +35,6 @@ fclean:
 	docker image prune -a -f
 	docker network prune -f
 	docker volume prune -f
-	sudo rm -rf ~/data
 
 .PHONY	: all build down re clean fclean
 .SILENT :
