@@ -69,14 +69,22 @@ services:
       retries: 50
     restart: always
   
-  # ftp:
-  #   build:
-  #     context: .
-  #     dockerfile: requirements/bonus/ftp/Dockerfile
-  #   container_name: ftp
-  #   networks:
-  #     - inception
-  #   restart: always
+  ftp:
+    build:
+      context: ./requirements/bonus/ftp
+      dockerfile: Dockerfile
+    container_name: ftp
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    volumes:
+      - wp-volume:/var/www/
+    networks:
+      - inception
+    depends_on:
+      - wordpress
+    restart: always
+
   
   static:
     build:
@@ -97,14 +105,14 @@ services:
     networks:
       - inception
     restart: always
-  
+
   netdata:
     build:
       context: ./requirements/bonus/netdata
       dockerfile: ./Dockerfile
     container_name: netdata
     networks:
-      - default
+      - inception
     volumes:
       - /home/${USER}/data/wordpress:/var/lib/netdata/vol1
       - /home/${USER}/data/mariadb:/var/lib/netdata/vol2
