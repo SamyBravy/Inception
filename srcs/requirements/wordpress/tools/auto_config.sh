@@ -18,12 +18,17 @@ if ! wp user get ${USER} --path=$WP_PATH --allow-root > /dev/null 2>&1; then
     wp user create ${USER} ${USER_EMAIL} --role=author --user_pass=${USER_PASSWORD} --path=$WP_PATH --allow-root
 fi
 
+# Install and activate a theme if it's not already installed
+if ! wp theme is-installed twentytwenty --path=$WP_PATH --allow-root; then
+    wp theme install --allow-root twentytwenty --activate
+fi
+
 #install redis-plugins
-if ! wp plugin is-installed redis-cache --path=$WP_PATH --allow-root;
+if ! wp plugin is-installed redis-cache --path=$WP_PATH --allow-root; then
 	wp config set WP_REDIS_HOST redis --add --allow-root
 	wp config set WP_REDIS_PORT 6379 --add --allow-root
 	wp config set WP_CACHE true --add --allow-root
- 
+
 	wp plugin install --allow-root redis-cache --activate
 	wp redis enable --allow-root
 	wp redis status --allow-root

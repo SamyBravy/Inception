@@ -29,6 +29,8 @@ COPY conf/www.conf /etc/php/${PHP_VERSION}/fpm/pool.d/www.conf
 
 RUN mkdir -p /run/php
 
+EXPOSE 9000
+
 COPY tools/auto_config.sh /
 RUN chmod +x /auto_config.sh
 ENTRYPOINT [ "sh", "/auto_config.sh" ]

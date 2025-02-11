@@ -6,13 +6,13 @@ services:
     container_name: nginx
     depends_on:
       - wordpress
+      - static
     ports:
       - "443:443"
     networks:
       - inception
     volumes:
       - ./requirements/nginx/conf/:/etc/nginx/http.d/
-      - ./requirements/nginx/tools:/etc/nginx/ssl/
       - wp-volume:/var/www/
     restart: always
   
@@ -58,7 +58,7 @@ services:
   redis:
     build:
       context: .
-      dockerfile: requirements/Bonus/Redis/Dockerfile
+      dockerfile: requirements/bonus/redis/Dockerfile
     container_name: redis
     networks:
       - inception
@@ -67,6 +67,24 @@ services:
       interval: 5s
       timeout: 60s
       retries: 50
+    restart: always
+  
+  # ftp:
+  #   build:
+  #     context: .
+  #     dockerfile: requirements/bonus/ftp/Dockerfile
+  #   container_name: ftp
+  #   networks:
+  #     - inception
+  #   restart: always
+  
+  static:
+    build:
+      context: .
+      dockerfile: requirements/bonus/static/Dockerfile
+    container_name: static
+    networks:
+      - inception
     restart: always
 
 volumes:
