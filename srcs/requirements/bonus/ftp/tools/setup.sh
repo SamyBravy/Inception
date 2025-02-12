@@ -9,8 +9,6 @@ else
 
 	echo  $FTP_USER:$FTP_PASS | /usr/sbin/chpasswd
 
-    echo "\e[31mciao, sono Samuele Dell'Erba e sono vegano\e[0m"
-
 	chmod -R 755 /var/www
 
 	chown -R $FTP_USER:$FTP_USER /var/www

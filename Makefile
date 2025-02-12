@@ -1,13 +1,21 @@
-#https://github.com/codesshaman/inception
-#https://chatgpt.com/c/67a4da1c-8114-800c-a0e8-06fb72495948
-#https://chatgpt.com/c/67a738f4-0cac-800c-871b-280181ff7b01
-#https://chatgpt.com/c/67a886a4-a4c8-800c-b634-1f6b8f22e603
-#https://github.com/iimyzf/Inception
-#https://github.com/mharriso/school21-checklists/blob/master/ng_3_inception.pdf
+# https://github.com/codesshaman/inception : guida mezza sbagliata
+# https://chatgpt.com/c/67a4da1c-8114-800c-a0e8-06fb72495948
+# https://chatgpt.com/c/67a738f4-0cac-800c-871b-280181ff7b01
+# https://chatgpt.com/c/67a886a4-a4c8-800c-b634-1f6b8f22e603
+# https://github.com/iimyzf/Inception : domande teoria (anche https://chatgpt.com/c/67ac736d-4ce4-800c-bba4-f0971c33f29f)
+# https://github.com/mharriso/school21-checklists/blob/master/ng_3_inception.pdf : correction sheet
+# per i databases:
 # docker exec -it mariadb sh
-# mariadb -uroot
+# mariadb -uroot (non deve funzionare)
 # mariadb -u<user di .env> -p<password di .env>
 # show databases;
+# https://sdell-er.42.fr
+# redis si vede accedendo come admin
+# https://sdell-er.42.fr/wp-login.php
+# https://sdell-er.42.fr/static/
+# https://sdell-er.42.fr/adminer
+# https://sdell-er.42.fr/netdata/#menu_system;theme=slate;help=true
+# ftp con filezilla: localhost <user di .env> <password di .env> 21
 
 name = Inception
 
