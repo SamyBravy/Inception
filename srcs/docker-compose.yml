@@ -73,12 +73,14 @@ services:
     build:
       context: ./requirements/bonus/ftp
       dockerfile: Dockerfile
+    env_file:
+      - .env
     container_name: ftp
     ports:
       - "21:21"
       - "30000-30009:30000-30009"
     volumes:
-      - wp-volume:/var/www/
+      - wp-volume:/var/www
     networks:
       - inception
     depends_on:
@@ -114,13 +116,11 @@ services:
     networks:
       - inception
     volumes:
-      - /home/${USER}/data/wordpress:/var/lib/netdata/vol1
-      - /home/${USER}/data/mariadb:/var/lib/netdata/vol2
+      - wp-volume:/var/lib/netdata/vol1
+      - db-volume:/var/lib/netdata/vol2
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - wordpress
     restart: always
 
 volumes:

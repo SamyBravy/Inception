@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eux
 
 WP_PATH=/var/www
 
