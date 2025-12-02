@@ -1,0 +1,21 @@
+# Environment variables (Safety first)
+.env
+srcs/.env
+
+# Docker logs and temp
+*.log
+
+# System
+.DS_Store
+.vscode/
+.idea/
+
+# Certificates (Generated on the fly usually)
+*.crt
+*.key
+*.pem
+
+# Data volumes (Se per caso li monti in locale nella repo)
+data/
+mysql/
+wordpress/
