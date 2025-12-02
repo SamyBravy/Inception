@@ -1,73 +1,127 @@
-# Inception: Dockerized Microservices Infrastructure
+# Inception: Docker-based Microservices Infrastructure
 
-[![Tools](https://img.shields.io/badge/Tools-Docker%20%7C%20Compose-2496ED.svg)](https://www.docker.com/)
-[![OS](https://img.shields.io/badge/OS-Alpine%20Linux-blue.svg)]()
-[![Server](https://img.shields.io/badge/Server-NGINX-green.svg)]()
+[![Infrastructure](https://img.shields.io/badge/Infrastructure-Docker%20Compose-2496ED.svg)](https://docs.docker.com/compose/)
+[![Web Server](https://img.shields.io/badge/Server-NGINX-009639.svg)]()
+[![Database](https://img.shields.io/badge/Database-MariaDB-003545.svg)]()
+[![Caching](https://img.shields.io/badge/Cache-Redis-DC382D.svg)]()
 
 ## Abstract
 
-**Inception** is a System Administration project focused on setting up a robust, containerized infrastructure using **Docker** and **Docker Compose**.
+**Inception** is a system administration project focused on building a resilient, containerized infrastructure using **Docker** and **Docker Compose**. The goal is to architect a network of loosely coupled microservices strictly following **Infrastructure as Code (IaC)** principles.
 
-The goal is to architect a small-scale network of loosely coupled microservices strictly following the **Infrastructure as Code (IaC)** principle. Instead of using pre-built images with "magic" automated configurations, each service (NGINX, WordPress, MariaDB) is built from a minimal base OS (Alpine/Debian) via custom `Dockerfiles`, ensuring full control over the configuration files, dependencies, and PID 1 process management.
+Unlike standard deployments, this project prohibits the use of pre-configured images or automated tools (like `docker network connect`). Every service is built from scratch using custom `Dockerfiles`, ensuring granular control over the OS (Alpine/Debian), PID 1 process management, and configuration files.
 
 ## System Architecture
 
-The infrastructure consists of three isolated containers communicating over a dedicated internal Docker network, with a single entry point via TLS.
+The infrastructure is composed of multiple isolated containers communicating via a dedicated internal bridge network.
 
-### Services Stack
+| Service | Base OS | Role & Description |
+| :--- | :--- | :--- |
+| **NGINX** | Alpine | **Reverse Proxy & TLS Termination.** The only entry point (Port 443). Handles SSL/TLS (v1.2/1.3) and forwards requests to WordPress. |
+| **MariaDB** | Alpine | **Persistence Layer.** SQL database for WordPress, isolated from the public network. |
+| **WordPress** | Debian | **Application Layer.** Running via PHP-FPM (Port 9000). |
+| **Redis** | Debian | **Performance Caching.** An object cache configured to optimize WordPress database queries. |
+| **FTP** | Debian | **File Transfer.** Vsftpd server allowing direct access to the web server files. |
+| **Adminer** | Debian | **Database Management.** Lightweight web interface for managing the MariaDB database. |
+| **Netdata** | Debian | **Observability.** Real-time system performance monitoring and metrics visualization. |
+| **Static Site** | Debian | **Personal Resume.** A static website server (Node.js/Serve) showcasing the author's CV. |
 
-| Service | Role | Configuration Details |
-|:---|:---|:---|
-| **NGINX** | **Reverse Proxy & TLS Termination** | Acts as the only entry point (ports 443). Handles TLS v1.2/v1.3 encryption (OpenSSL) and forwards requests to WordPress via FastCGI. |
-| **WordPress** | **Application Layer** | Runs PHP-FPM (FastCGI Process Manager). It does not expose any ports to the host, communicating only with NGINX and MariaDB internally. |
-| **MariaDB** | **Database Layer** | Persistent data storage. Configured to accept connections only from the WordPress container for enhanced security. |
+### Network & Security
+*   **Isolation:** All containers reside in the `inception` docker network. Only NGINX exposes port 443 to the host.
+*   **Encryption:** Self-signed SSL certificates are generated automatically at build time.
+*   **Persistence:** Data for the Database and WordPress is persisted on the host machine via Docker Volumes.
 
-### Network & Storage
-*   **Isolation:** The containers operate within a custom Docker bridge network, preventing external access to the database or application logic directly.
-*   **Persistence:** Data is preserved using Docker Volumes mapped to the host machine (`/home/login/data`), ensuring that the database and website content survive container restarts.
+## Prerequisites
 
-## Installation & Setup
+*   **Docker Engine** & **Docker Compose**
+*   **Make**
+*   **Host Configuration:** Map the domain to localhost by adding the following line to your `/etc/hosts` file (replace `sdell-er` with your username if needed):
+    ```bash
+    127.0.0.1 sdell-er.42.fr
+    ```
 
-### Prerequisites
-*   Docker Engine & Docker Compose.
-*   `make` utility.
-*   Root privileges (required to map volumes to system directories).
+## Configuration
 
-### Configuration
-1.  Clone the repository.
-2.  Create a `.env` file in `srcs/` based on the example provided (if applicable), setting up your environment variables (Database Name, Root Password, Admin User, etc.).
+The project is parameterized via a `.env` file in the `srcs/` directory.
 
-### Deploying the Infrastructure
-Use the `Makefile` to build images and orchestrate the containers:
+**Environment Variables Structure:**
+```env
+DOMAIN_NAME=sdell-er.42.fr
 
-```bash
-make
+# Database Configuration
+DB_NAME=wordpress
+DB_ROOT=rootpass
+DB_USER=wpuser
+DB_PASS=wppass
+DB_HOST=mariadb
+
+# WordPress Admin
+WP_ADMIN_USER=admin
+WP_ADMIN_PASS=adminpass
+WP_ADMIN_EMAIL=admin@student.42.fr
+
+# FTP Configuration
+FTP_USER=ftpuser
+FTP_PASS=ftppass
 ```
-*This command creates the required data directories, builds the Docker images from scratch, and launches the network.*
 
-### Accessing the Service
-Once up, the application is accessible via HTTPS:
-*   URL: `https://localhost` (or the domain configured in your `/etc/hosts`, e.g., `login.42.fr`).
-*   *Note: Since the SSL certificate is self-signed for development purposes, your browser will prompt a security warning.*
+## Installation & Orchestration
 
-### Maintenance & Teardown
+A `Makefile` is provided to automate the deployment lifecycle.
 
-To stop the containers:
+### Build and Launch
+Builds all images from scratch, sets up volumes, and starts the container cluster:
 ```bash
-make stop
+make all
 ```
 
-To clean up containers, networks, and images:
+### Stop Services
+Stops and removes the running containers:
+```bash
+make down
+```
+
+### System Cleanup
+Stops containers, removes images, networks, and Docker volumes (data on host is preserved):
 ```bash
 make clean
 ```
 
-To perform a full system reset (including persistent data volumes):
+### Hard Reset
+**Warning:** Deletes everything, including persistent data volumes (database and website files) stored in `/home/${USER}/data`:
 ```bash
 make fclean
 ```
 
-## Technical Highlights
-*   **Security:** No passwords are hardcoded in the Dockerfiles; all credentials are injected via environment variables at runtime.
-*   **Efficiency:** Usage of **Alpine Linux** (where possible) to minimize image size and attack surface.
-*   **Resilience:** Proper PID handling ensures services can be stopped gracefully (`SIGTERM`).
+## Accessing Services
+
+Once deployed, the ecosystem is accessible via the following endpoints:
+
+| Service | URL / Access |
+| :--- | :--- |
+| **WordPress** | `https://sdell-er.42.fr` |
+| **Adminer** | `https://sdell-er.42.fr/adminer` |
+| **Netdata** | `https://sdell-er.42.fr/netdata/` |
+| **Static CV** | `https://sdell-er.42.fr/static/` |
+| **FTP** | `ftp://localhost:21` (User/Pass from `.env`) |
+
+## Directory Structure
+
+```plaintext
+Inception/
+├── Makefile
+├── srcs/
+│   ├── docker-compose.yml
+│   ├── .env
+│   └── requirements/
+│       ├── mariadb/       # Dockerfile & DB initialization
+│       ├── nginx/         # Dockerfile & TLS config
+│       ├── wordpress/     # Dockerfile & PHP-FPM config
+│       ├── bonus/
+│       │   ├── adminer/   # Database GUI
+│       │   ├── ftp/       # FTP Server
+│       │   ├── netdata/   # System Monitoring
+│       │   ├── redis/     # Cache Layer
+│       │   └── static/    # Static Website Source
+│       └── tools/         # Setup scripts
+```
