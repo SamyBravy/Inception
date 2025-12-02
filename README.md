@@ -1,132 +1,73 @@
+# Inception: Dockerized Microservices Infrastructure
 
+[![Tools](https://img.shields.io/badge/Tools-Docker%20%7C%20Compose-2496ED.svg)](https://www.docker.com/)
+[![OS](https://img.shields.io/badge/OS-Alpine%20Linux-blue.svg)]()
+[![Server](https://img.shields.io/badge/Server-NGINX-green.svg)]()
 
-# Inception - Docker Infrastructure
+## Abstract
 
-This project aims to broaden system administration and virtualization knowledge using **Docker**. The objective is to set up a complete infrastructure composed of several services running in separate containers, orchestrated by **docker-compose**.
+**Inception** is a System Administration project focused on setting up a robust, containerized infrastructure using **Docker** and **Docker Compose**.
 
-The project adheres to the strict rules of the 42 School subject: no `--link`, no `latest` tags, usage of custom Dockerfiles, and implementation of persistent volumes.
+The goal is to architect a small-scale network of loosely coupled microservices strictly following the **Infrastructure as Code (IaC)** principle. Instead of using pre-built images with "magic" automated configurations, each service (NGINX, WordPress, MariaDB) is built from a minimal base OS (Alpine/Debian) via custom `Dockerfiles`, ensuring full control over the configuration files, dependencies, and PID 1 process management.
 
-## Architecture
+## System Architecture
 
-The infrastructure consists of the following containers:
+The infrastructure consists of three isolated containers communicating over a dedicated internal Docker network, with a single entry point via TLS.
 
-| Service | Base OS | Description |
-| :--- | :--- | :--- |
-| **NGINX** | Alpine | Web server, single entry point (Port 443), SSL/TLS (v1.2/1.3) management. |
-| **MariaDB** | Alpine | SQL database for WordPress. |
-| **WordPress** | Debian | CMS running with PHP-FPM (Port 9000). |
-| **Redis** | Debian | (Bonus) Cache to optimize WordPress performance. |
-| **FTP** | Debian | (Bonus) FTP server to access website files. |
-| **Adminer** | Debian | (Bonus) Web interface for database management. |
-| **Netdata** | Debian | (Bonus) Real-time system performance monitoring tool. |
-| **Static Website** | Debian | (Bonus) Static website (Resume/CV) served via Node.js/Serve. |
+### Services Stack
 
-### Network
-All containers communicate via a dedicated Docker network named `inception`. Only NGINX is directly exposed on port 443. Bonus services are accessible through proxy rules in NGINX or specific ports for administration (FTP).
+| Service | Role | Configuration Details |
+|:---|:---|:---|
+| **NGINX** | **Reverse Proxy & TLS Termination** | Acts as the only entry point (ports 443). Handles TLS v1.2/v1.3 encryption (OpenSSL) and forwards requests to WordPress via FastCGI. |
+| **WordPress** | **Application Layer** | Runs PHP-FPM (FastCGI Process Manager). It does not expose any ports to the host, communicating only with NGINX and MariaDB internally. |
+| **MariaDB** | **Database Layer** | Persistent data storage. Configured to accept connections only from the WordPress container for enhanced security. |
 
-## 📋 Prerequisites
+### Network & Storage
+*   **Isolation:** The containers operate within a custom Docker bridge network, preventing external access to the database or application logic directly.
+*   **Persistence:** Data is preserved using Docker Volumes mapped to the host machine (`/home/login/data`), ensuring that the database and website content survive container restarts.
 
-*   Docker Engine
-*   Docker Compose
-*   Make
-*   **Host Configuration**: To access the site via the required domain name, you must add the following line to your `/etc/hosts` file (replace `sdell-er` with your login if necessary):
-    ```bash
-    127.0.0.1 sdell-er.42.fr
-    ```
+## Installation & Setup
 
-## Configuration (.env)
+### Prerequisites
+*   Docker Engine & Docker Compose.
+*   `make` utility.
+*   Root privileges (required to map volumes to system directories).
 
-Create a `.env` file in the `srcs/` directory with the following variables:
+### Configuration
+1.  Clone the repository.
+2.  Create a `.env` file in `srcs/` based on the example provided (if applicable), setting up your environment variables (Database Name, Root Password, Admin User, etc.).
 
-```env
-DOMAIN_NAME=sdell-er.42.fr
+### Deploying the Infrastructure
+Use the `Makefile` to build images and orchestrate the containers:
 
-# MySQL Setup
-DB_NAME=wordpress
-DB_ROOT=rootpass
-DB_USER=wpuser
-DB_PASS=wppass
-DB_HOST=mariadb
-
-# WordPress Admin
-WP_ADMIN_USER=admin
-WP_ADMIN_PASS=adminpass
-WP_ADMIN_EMAIL=admin@student.42.fr
-
-# WordPress User
-WP_USER=author
-WP_USER_PASS=authorpass
-WP_USER_EMAIL=author@student.42.fr
-
-# FTP
-FTP_USER=ftpuser
-FTP_PASS=ftppass
-```
-
-## Installation & Usage
-
-A `Makefile` is provided to automate common tasks.
-
-### Start the project
-Builds images, creates volume directories, and starts containers in the background:
 ```bash
-make all
+make
 ```
+*This command creates the required data directories, builds the Docker images from scratch, and launches the network.*
 
-### Stop the project
-Stops and removes containers:
+### Accessing the Service
+Once up, the application is accessible via HTTPS:
+*   URL: `https://localhost` (or the domain configured in your `/etc/hosts`, e.g., `login.42.fr`).
+*   *Note: Since the SSL certificate is self-signed for development purposes, your browser will prompt a security warning.*
+
+### Maintenance & Teardown
+
+To stop the containers:
 ```bash
-make down
+make stop
 ```
 
-### Clean (Reset)
-Stops containers, removes images, networks, and Docker volumes (but keeps data on the host):
+To clean up containers, networks, and images:
 ```bash
 make clean
 ```
 
-### Full Clean (Hard Reset)
-**Warning**: Deletes everything, including persistent data (database and WordPress files) stored in `/home/${USER}/data`:
+To perform a full system reset (including persistent data volumes):
 ```bash
 make fclean
 ```
 
-## Accessing Services
-
-Once the infrastructure is up, you can access the services via your browser or tools:
-
-*   **WordPress (Main Site)**: `https://sdell-er.42.fr`
-*   **Adminer (DB Manager)**: `https://sdell-er.42.fr/adminer`
-*   **Static Site**: `https://sdell-er.42.fr/static/`
-*   **Netdata (Monitoring)**: `https://sdell-er.42.fr/netdata/`
-*   **FTP**:
-    *   Host: `localhost`
-    *   Port: `21`
-    *   User/Pass: Defined in `.env`
-
-## Directory Structure
-
-```
-Inception/
-├── Makefile
-├── srcs/
-│   ├── docker-compose.yml
-│   ├── .env
-│   └── requirements/
-│       ├── mariadb/       # Dockerfile & DB scripts
-│       ├── nginx/         # Dockerfile & SSL/HTTP conf
-│       ├── wordpress/     # Dockerfile & PHP-FPM conf
-│       ├── bonus/
-│       │   ├── adminer/   # Web DB Management
-│       │   ├── ftp/       # vsftpd Server
-│       │   ├── netdata/   # Real-time monitoring
-│       │   ├── redis/     # Object Cache
-│       │   └── static/    # Personal CV Website
-│       └── tools/         # Utility scripts (make_dir.sh)
-└── ...
-```
-
-## Security & Data
-
-*   **SSL Certificates**: Automatically generated by the NGINX Dockerfile for the domain `sdell-er.42.fr`.
-*   **Persistence**: Database data and WordPress files are stored on the host machine in `/home/${USER}/data/`.
+## Technical Highlights
+*   **Security:** No passwords are hardcoded in the Dockerfiles; all credentials are injected via environment variables at runtime.
+*   **Efficiency:** Usage of **Alpine Linux** (where possible) to minimize image size and attack surface.
+*   **Resilience:** Proper PID handling ensures services can be stopped gracefully (`SIGTERM`).
