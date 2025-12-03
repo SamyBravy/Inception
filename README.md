@@ -5,7 +5,7 @@
 [![Database](https://img.shields.io/badge/Database-MariaDB-003545.svg)]()
 [![Caching](https://img.shields.io/badge/Cache-Redis-DC382D.svg)]()
 
-## Abstract
+## Overview
 
 **Inception** is a system administration project focused on building a resilient, containerized infrastructure using **Docker** and **Docker Compose**. The goal is to architect a network of loosely coupled microservices strictly following **Infrastructure as Code (IaC)** principles.
 
